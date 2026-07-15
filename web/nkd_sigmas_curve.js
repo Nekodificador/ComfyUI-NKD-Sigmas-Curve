@@ -7474,6 +7474,62 @@ const _export_sfc = (sfc, props) => {
 const SigmaCurveWidget = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-8d42311c"]]);
 const NODE_NAME = "NKDSigmasCurve";
 const EXT_NAME = "NKD.SigmasCurve.Vue";
+function keepDomWidgetSized(node, container) {
+  const MAX_MARGIN = 40;
+  let enforcingW = false;
+  let goodMargin = 15;
+  const vueMode = () => {
+    var _a;
+    return !!((_a = window.LiteGraph) == null ? void 0 : _a.vueNodesMode);
+  };
+  const clamp = () => {
+    var _a;
+    if (enforcingW) return;
+    if (vueMode()) {
+      if (container.style.width) container.style.width = "";
+      return;
+    }
+    const nodeW = (_a = node.size) == null ? void 0 : _a[0];
+    if (!nodeW) return;
+    const host = container.parentElement;
+    const hostW = host ? host.clientWidth : 0;
+    const broken = hostW > 0 && (hostW > nodeW * 1.2 || hostW < nodeW * 0.7);
+    if (!broken) {
+      if (container.style.width) {
+        enforcingW = true;
+        container.style.width = "";
+        requestAnimationFrame(() => {
+          enforcingW = false;
+        });
+      }
+      const cw = container.clientWidth;
+      if (cw > 0 && cw <= nodeW && cw >= nodeW - MAX_MARGIN) goodMargin = nodeW - cw;
+      return;
+    }
+    const ref2 = Math.round(nodeW - goodMargin);
+    if (ref2 > 0 && Math.abs(container.clientWidth - ref2) > 2) {
+      enforcingW = true;
+      container.style.boxSizing = "border-box";
+      container.style.width = ref2 + "px";
+      requestAnimationFrame(() => {
+        enforcingW = false;
+      });
+    }
+  };
+  clamp();
+  const ro = new ResizeObserver(clamp);
+  ro.observe(container);
+  const origResize = node.onResize;
+  node.onResize = function() {
+    origResize == null ? void 0 : origResize.apply(this, arguments);
+    clamp();
+  };
+  const iv = window.setInterval(clamp, 250);
+  return () => {
+    ro.disconnect();
+    clearInterval(iv);
+  };
+}
 app.registerExtension({
   name: EXT_NAME,
   async beforeRegisterNodeDef(nodeType, nodeData, _app) {
@@ -7619,6 +7675,7 @@ app.registerExtension({
           }
         }
       );
+      const _nkdW = keepDomWidgetSized(this, container);
       const origResize = this.onResize;
       this.onResize = function(size) {
         origResize == null ? void 0 : origResize.apply(this, arguments);
@@ -7667,6 +7724,7 @@ app.registerExtension({
       const origRemoved = this.onRemoved;
       this.onRemoved = function() {
         var _a2;
+        _nkdW();
         api.removeEventListener("executed", onExecuted);
         barObserver.disconnect();
         (_a2 = instance.cleanup) == null ? void 0 : _a2.call(instance);

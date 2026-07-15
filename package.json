@@ -1,6 +1,6 @@
 {
   "name": "nkd-sigma-curve",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": true,
   "description": "NKD Sigma Curve – ComfyUI interactive sigma editor node",
   "scripts": {
