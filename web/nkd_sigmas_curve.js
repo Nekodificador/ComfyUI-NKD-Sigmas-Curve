@@ -6476,9 +6476,16 @@ const _hoisted_13 = ["disabled", "title"];
 const _hoisted_14 = ["disabled", "title"];
 const _hoisted_15 = ["disabled"];
 const _hoisted_16 = { class: "nkd-row nkd-row--hint" };
-const _hoisted_17 = { class: "nkd-info" };
-const _hoisted_18 = { class: "nkd-hint" };
-const _hoisted_19 = { key: 0 };
+const _hoisted_17 = {
+  key: 0,
+  class: "nkd-info"
+};
+const _hoisted_18 = {
+  key: 1,
+  class: "nkd-info"
+};
+const _hoisted_19 = { class: "nkd-hint" };
+const _hoisted_20 = { key: 0 };
 const CW = 400;
 const CH = 200;
 const MIN_RENDER_SCALE = 2;
@@ -6492,7 +6499,10 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     stepsWidget: {},
     maxSigmaWidget: {},
     refSigmasWidget: {},
-    onFetchReference: { type: Function }
+    onFetchReference: { type: Function },
+    yMinWidget: {},
+    yLabel: {},
+    xUnit: {}
   },
   setup(__props, { expose: __expose }) {
     const PAD = { top: 16, right: 14, bottom: 22, left: 42 };
@@ -6542,6 +6552,10 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     const extMaxSigma = computed(() => {
       var _a;
       return +(((_a = props.maxSigmaWidget) == null ? void 0 : _a.value) ?? 1);
+    });
+    const extYMin = computed(() => {
+      var _a;
+      return +(((_a = props.yMinWidget) == null ? void 0 : _a.value) ?? 0);
     });
     const snapEnabled = computed(() => snapToSteps.value && extSteps.value <= 15);
     function fmtSigma(v) {
@@ -6842,10 +6856,12 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const cx = toCanvasX(pt[0]);
       const cy = toCanvasY(pt[1]);
       const ms = extMaxSigma.value;
+      const y0 = extYMin.value;
       const steps = extSteps.value;
-      const stepVal = Math.round(pt[0] * steps);
-      const sigmaVal = (pt[1] * ms).toFixed(3);
-      const label = `step ${stepVal}  σ ${sigmaVal}`;
+      const byStep = (props.xUnit ?? "steps") === "steps";
+      const xVal = byStep ? `step ${Math.round(pt[0] * steps)}` : `t ${pt[0].toFixed(2)}`;
+      const yVal = (y0 + pt[1] * (ms - y0)).toFixed(3);
+      const label = `${xVal}  ${props.yLabel ?? "σ"} ${yVal}`;
       const PAD_X = 6, PAD_Y = 4;
       const FONT = "10px monospace";
       ctx.save();
@@ -6948,32 +6964,38 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     }
     function drawAxisLabels() {
       const ms = extMaxSigma.value;
+      const y0 = extYMin.value;
       const steps = extSteps.value;
+      const byStep = (props.xUnit ?? "steps") === "steps";
       ctx.save();
       ctx.font = "9px monospace";
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       [0, 0.25, 0.5, 0.75, 1].forEach((v) => {
         ctx.fillStyle = v === 0 || v === 1 ? C.axisLabel : C.axisLabelDim;
-        ctx.fillText((v * ms).toFixed(3), PAD.left - 4, toCanvasY(v));
+        ctx.fillText((y0 + v * (ms - y0)).toFixed(3), PAD.left - 4, toCanvasY(v));
       });
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
       ctx.fillStyle = C.axisLabel;
       ctx.fillText("0", PAD.left, PAD.top + IH + 4);
-      ctx.fillText(String(steps), PAD.left + IW, PAD.top + IH + 4);
+      ctx.fillText(byStep ? String(steps) : "1", PAD.left + IW, PAD.top + IH + 4);
       ctx.fillStyle = C.axisLabelDim;
-      ctx.fillText(String(Math.round(steps / 2)), PAD.left + IW / 2, PAD.top + IH + 4);
+      ctx.fillText(
+        byStep ? String(Math.round(steps / 2)) : "0.5",
+        PAD.left + IW / 2,
+        PAD.top + IH + 4
+      );
       ctx.font = "8px sans-serif";
       ctx.fillStyle = C.axisLabelDim;
       ctx.textBaseline = "bottom";
-      ctx.fillText("steps →", PAD.left + IW * 0.75, CH - 1);
+      ctx.fillText(byStep ? "steps →" : "progress →", PAD.left + IW * 0.75, CH - 1);
       ctx.save();
       ctx.translate(8, PAD.top + IH / 2);
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("σ", 0, 0);
+      ctx.fillText(props.yLabel ?? "σ", 0, 0);
       ctx.restore();
       ctx.restore();
     }
@@ -7441,11 +7463,11 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
             }, "Reduce", 10, _hoisted_15)
           ])) : createCommentVNode("", true),
           createBaseVNode("div", _hoisted_16, [
-            createBaseVNode("span", _hoisted_17, "S: " + toDisplayString(extSteps.value) + " | σmax: " + toDisplayString(fmtSigma(extMaxSigma.value)), 1),
+            (__props.xUnit ?? "steps") === "steps" ? (openBlock(), createElementBlock("span", _hoisted_17, "S: " + toDisplayString(extSteps.value) + " | σmax: " + toDisplayString(fmtSigma(extMaxSigma.value)), 1)) : (openBlock(), createElementBlock("span", _hoisted_18, toDisplayString(__props.yLabel ?? "y") + ": " + toDisplayString(fmtSigma(extYMin.value)) + " → " + toDisplayString(fmtSigma(extMaxSigma.value)), 1)),
             _cache[13] || (_cache[13] = createBaseVNode("div", { class: "nkd-spacer" }, null, -1)),
-            createBaseVNode("span", _hoisted_18, [
+            createBaseVNode("span", _hoisted_19, [
               _cache[12] || (_cache[12] = createTextVNode(" Click=add · Drag=move · Shift+click=delete", -1)),
-              !endpointsLocked.value ? (openBlock(), createElementBlock("span", _hoisted_19, " · Endpoints unlocked")) : createCommentVNode("", true)
+              !endpointsLocked.value ? (openBlock(), createElementBlock("span", _hoisted_20, " · Endpoints unlocked")) : createCommentVNode("", true)
             ])
           ])
         ]),
@@ -7471,9 +7493,21 @@ const _export_sfc = (sfc, props) => {
   }
   return target;
 };
-const SigmaCurveWidget = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-8d42311c"]]);
-const NODE_NAME = "NKDSigmasCurve";
+const SigmaCurveWidget = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-601dc9d7"]]);
 const EXT_NAME = "NKD.SigmasCurve.Vue";
+const CURVE_NODES = {
+  NKDSigmasCurve: {
+    maxWidget: "max_sigma",
+    stepsWidget: "steps",
+    hasReference: true
+  },
+  NKDH3AudioShiftCurve: {
+    maxWidget: "mult_max",
+    minWidget: "mult_min",
+    yLabel: "× shift",
+    hasReference: false
+  }
+};
 function keepDomWidgetSized(node, container) {
   const MAX_MARGIN = 40;
   let enforcingW = false;
@@ -7533,25 +7567,30 @@ function keepDomWidgetSized(node, container) {
 app.registerExtension({
   name: EXT_NAME,
   async beforeRegisterNodeDef(nodeType, nodeData, _app) {
-    if (nodeData.name !== NODE_NAME) return;
+    const opts = CURVE_NODES[nodeData.name];
+    if (!opts) return;
+    if (nodeType.prototype.__nkdWrapped) return;
+    nodeType.prototype.__nkdWrapped = true;
     const origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function() {
-      var _a, _b, _c, _d;
+      var _a, _b, _c, _d, _e;
       const result = origCreated == null ? void 0 : origCreated.apply(this, arguments);
       const curveDataWidget = (_a = this.widgets) == null ? void 0 : _a.find(
         (w) => w.name === "curve_data"
       );
-      const stepsWidget = (_b = this.widgets) == null ? void 0 : _b.find((w) => w.name === "steps");
-      const maxSigmaWidget = (_c = this.widgets) == null ? void 0 : _c.find((w) => w.name === "max_sigma");
+      const stepsWidget = opts.stepsWidget ? (_b = this.widgets) == null ? void 0 : _b.find((w) => w.name === opts.stepsWidget) : null;
+      const maxSigmaWidget = (_c = this.widgets) == null ? void 0 : _c.find((w) => w.name === opts.maxWidget);
+      const minWidget = opts.minWidget ? (_d = this.widgets) == null ? void 0 : _d.find((w) => w.name === opts.minWidget) : null;
       const stepsProxy = /* @__PURE__ */ reactive({ value: (stepsWidget == null ? void 0 : stepsWidget.value) ?? 20 });
       const maxSigmaProxy = /* @__PURE__ */ reactive({ value: (maxSigmaWidget == null ? void 0 : maxSigmaWidget.value) ?? 1 });
+      const minProxy = /* @__PURE__ */ reactive({ value: (minWidget == null ? void 0 : minWidget.value) ?? 0 });
       if (curveDataWidget) {
         curveDataWidget.type = "hidden";
         curveDataWidget.hidden = true;
         curveDataWidget.computedHeight = 0;
         curveDataWidget.computeSize = () => [0, -4];
       }
-      const cdIdx = (_d = this.inputs) == null ? void 0 : _d.findIndex((inp) => inp.name === "curve_data");
+      const cdIdx = (_e = this.inputs) == null ? void 0 : _e.findIndex((inp) => inp.name === "curve_data");
       if (cdIdx !== void 0 && cdIdx >= 0) {
         this.removeInput(cdIdx);
       }
@@ -7563,9 +7602,12 @@ app.registerExtension({
           if (curveDataWidget) curveDataWidget.value = json;
           this.setDirtyCanvas(true);
         },
-        stepsWidget: stepsProxy,
+        stepsWidget: opts.stepsWidget ? stepsProxy : null,
         maxSigmaWidget: maxSigmaProxy,
-        onFetchReference: () => fetchReference()
+        yMinWidget: opts.minWidget ? minProxy : null,
+        yLabel: opts.yLabel,
+        xUnit: opts.stepsWidget ? "steps" : "progress",
+        onFetchReference: opts.hasReference ? () => fetchReference() : void 0
       });
       const instance = vueApp.mount(container);
       const self2 = this;
@@ -7589,17 +7631,19 @@ app.registerExtension({
         if (!link) return;
         app.queuePrompt(0, 1, [self2.id]);
       }
-      api.addEventListener("executed", onExecuted);
-      const origConnectChange = this.onConnectionsChange;
-      this.onConnectionsChange = function() {
-        var _a2, _b2;
-        origConnectChange == null ? void 0 : origConnectChange.apply(this, arguments);
-        const refInput = (_a2 = self2.inputs) == null ? void 0 : _a2.find((inp) => inp.name === "reference_sigmas");
-        const connected = !!(refInput == null ? void 0 : refInput.link);
-        (_b2 = instance.setReferenceConnected) == null ? void 0 : _b2.call(instance, connected);
-      };
+      if (opts.hasReference) {
+        api.addEventListener("executed", onExecuted);
+        const origConnectChange = this.onConnectionsChange;
+        this.onConnectionsChange = function() {
+          var _a2, _b2;
+          origConnectChange == null ? void 0 : origConnectChange.apply(this, arguments);
+          const refInput = (_a2 = self2.inputs) == null ? void 0 : _a2.find((inp) => inp.name === "reference_sigmas");
+          const connected = !!(refInput == null ? void 0 : refInput.link);
+          (_b2 = instance.setReferenceConnected) == null ? void 0 : _b2.call(instance, connected);
+        };
+      }
       const resolveInputValue = (widgetName, fallback) => {
-        var _a2, _b2, _c2, _d2, _e, _f, _g;
+        var _a2, _b2, _c2, _d2, _e2, _f, _g;
         const slotIdx = (_a2 = self2.inputs) == null ? void 0 : _a2.findIndex((inp) => inp.name === widgetName);
         const slot = slotIdx !== void 0 && slotIdx >= 0 ? self2.inputs[slotIdx] : null;
         if ((slot == null ? void 0 : slot.link) != null) {
@@ -7607,7 +7651,7 @@ app.registerExtension({
           const link = linksMap instanceof Map ? linksMap.get(slot.link) : linksMap[slot.link];
           if (link) {
             const upstream = ((_c2 = (_b2 = app.graph).getNodeById) == null ? void 0 : _c2.call(_b2, link.origin_id)) ?? ((_d2 = app.graph._nodes_by_id) == null ? void 0 : _d2[link.origin_id]);
-            const w = ((_e = upstream == null ? void 0 : upstream.widgets) == null ? void 0 : _e.find(
+            const w = ((_e2 = upstream == null ? void 0 : upstream.widgets) == null ? void 0 : _e2.find(
               (ww) => (ww == null ? void 0 : ww.name) === "value" || (ww == null ? void 0 : ww.name) === widgetName
             )) ?? ((_f = upstream == null ? void 0 : upstream.widgets) == null ? void 0 : _f[0]);
             if (w && w.value !== void 0 && w.value !== null) return w.value;
@@ -7630,15 +7674,28 @@ app.registerExtension({
           if (maxSigmaProxy.value !== value) maxSigmaProxy.value = value;
         };
       }
+      if (minWidget) {
+        const origCb = minWidget.callback;
+        minWidget.callback = function(value) {
+          origCb == null ? void 0 : origCb.call(this, value);
+          if (minProxy.value !== value) minProxy.value = value;
+        };
+      }
       let v1NeedsInit = true;
       const origDrawBg = this.onDrawBackground;
       this.onDrawBackground = function(ctx) {
         var _a2;
         origDrawBg == null ? void 0 : origDrawBg.apply(this, arguments);
-        const effSteps = resolveInputValue("steps", 20);
-        const effMaxSigma = resolveInputValue("max_sigma", 1);
-        if (stepsProxy.value !== effSteps) stepsProxy.value = effSteps;
-        if (maxSigmaProxy.value !== effMaxSigma) maxSigmaProxy.value = effMaxSigma;
+        if (opts.stepsWidget) {
+          const effSteps = resolveInputValue(opts.stepsWidget, 20);
+          if (stepsProxy.value !== effSteps) stepsProxy.value = effSteps;
+        }
+        const effMax = resolveInputValue(opts.maxWidget, 1);
+        if (maxSigmaProxy.value !== effMax) maxSigmaProxy.value = effMax;
+        if (opts.minWidget) {
+          const effMin = resolveInputValue(opts.minWidget, 0);
+          if (minProxy.value !== effMin) minProxy.value = effMin;
+        }
         if (v1NeedsInit && ((_a2 = instance.forceResize) == null ? void 0 : _a2.call(instance))) v1NeedsInit = false;
       };
       const CANVAS_W = 400;
@@ -7725,7 +7782,7 @@ app.registerExtension({
       this.onRemoved = function() {
         var _a2;
         _nkdW();
-        api.removeEventListener("executed", onExecuted);
+        if (opts.hasReference) api.removeEventListener("executed", onExecuted);
         barObserver.disconnect();
         (_a2 = instance.cleanup) == null ? void 0 : _a2.call(instance);
         vueApp.unmount();
@@ -7740,7 +7797,7 @@ app.registerExtension({
   try {
     if (typeof document != "undefined") {
       var elementStyle = document.createElement("style");
-      elementStyle.appendChild(document.createTextNode('/* ── Root — shared visual language with Relight / Lens Blur ─────────────── */\n.nkd-root[data-v-8d42311c] {\r\n  display: flex;\r\n  flex-direction: column;\r\n  height: 100%;\r\n  background: var(--comfy-menu-bg, #111318);\r\n  overflow: hidden;\r\n  border-radius: 8px;\r\n  font-family: var(--font-family, "Inter", sans-serif);\r\n  font-size: 11px;\r\n  color: var(--fg-color, #c8d0e0);\r\n  user-select: none;\n}\r\n/* Universal border-box inside the widget — prevents fixed-width children\r\n   from overflowing the node and "bleeding" past its border. */\n.nkd-root[data-v-8d42311c], .nkd-root[data-v-8d42311c] *, .nkd-root[data-v-8d42311c] *::before, .nkd-root[data-v-8d42311c] *::after {\r\n  box-sizing: border-box;\n}\r\n\r\n/* ── Controls bar (single container, internal row separators) ──────────── */\n.nkd-bar[data-v-8d42311c] {\r\n  display: flex;\r\n  flex-direction: column;\r\n  background: var(--comfy-menu-bg, #1a1c22);\r\n  border-bottom: 1px solid var(--border-color, #2a2d36);\r\n  min-width: 0;\n}\n.nkd-row[data-v-8d42311c] {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  flex-wrap: nowrap;\r\n  overflow: hidden;\r\n  min-width: 0;\n}\n.nkd-row--controls[data-v-8d42311c] { padding: 5px 8px 3px;\n}\n.nkd-row--presets[data-v-8d42311c]  { padding: 3px 8px;     border-top: 1px solid var(--border-color, rgba(255,255,255,0.06));\n}\n.nkd-row--ref[data-v-8d42311c]      { padding: 3px 8px;     border-top: 1px solid var(--nkd-ref-accent, rgba(255,180,60,0.2));\n}\n.nkd-row--hint[data-v-8d42311c]     { padding: 3px 8px 5px;\n}\n.nkd-select--preset[data-v-8d42311c] { flex: 1 1 auto; min-width: 0; max-width: 240px;\n}\n.nkd-btn--preset[data-v-8d42311c]    { padding: 2px 8px;\n}\n.nkd-label[data-v-8d42311c] {\r\n  font-size: 10px;\r\n  color: var(--descrip-text, rgba(255,255,255,0.45));\r\n  white-space: nowrap;\r\n  flex-shrink: 0;\n}\r\n\r\n/* ── Select (themed to ComfyUI) ─────────────────────────────────────────── */\n.nkd-select[data-v-8d42311c] {\r\n  font-size: 11px;\r\n  background: var(--comfy-input-bg, #252830);\r\n  border: 1px solid var(--border-color, #3a3d46);\r\n  color: var(--input-text, #c8d0e0);\r\n  border-radius: 5px;\r\n  padding: 2px 6px;\r\n  cursor: pointer;\r\n  outline: none;\r\n  transition: border-color 0.12s;\n}\n.nkd-select[data-v-8d42311c]:hover,\r\n.nkd-select[data-v-8d42311c]:focus { border-color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-divider[data-v-8d42311c] {\r\n  width: 1px; height: 14px;\r\n  background: var(--border-color, rgba(255,255,255,0.12));\r\n  margin: 0 2px;\r\n  flex-shrink: 0;\n}\n.nkd-group[data-v-8d42311c] {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  min-width: 0;\n}\r\n\r\n/* ── Slider (matches .rl-range / .lb-range in the other NKD nodes) ──────── */\n.nkd-slider[data-v-8d42311c] {\r\n  width: 80px;\r\n  height: 14px;\r\n  margin: 0;\r\n  background: transparent;\r\n  cursor: pointer;\r\n  flex-shrink: 0;\r\n  -webkit-appearance: none;\r\n  appearance: none;\n}\n.nkd-slider[data-v-8d42311c]::-webkit-slider-runnable-track {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: linear-gradient(\r\n    to right,\r\n    var(--p-primary-color, #4ab4ff) 0 var(--nkd-fill, 0%),\r\n    var(--comfy-input-bg, #252830) var(--nkd-fill, 0%) 100%\r\n  );\n}\n.nkd-slider[data-v-8d42311c]::-webkit-slider-thumb {\r\n  -webkit-appearance: none;\r\n  appearance: none;\r\n  margin-top: -4px;\r\n  width: 13px;\r\n  height: 13px;\r\n  border-radius: 50%;\r\n  background: var(--fg-color, #e5e7eb);\r\n  border: 1px solid var(--border-color, #1f2937);\r\n  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);\n}\n.nkd-slider[data-v-8d42311c]::-moz-range-track {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: var(--comfy-input-bg, #252830);\n}\n.nkd-slider[data-v-8d42311c]::-moz-range-progress {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: var(--p-primary-color, #4ab4ff);\n}\n.nkd-slider[data-v-8d42311c]::-moz-range-thumb {\r\n  width: 13px;\r\n  height: 13px;\r\n  border-radius: 50%;\r\n  background: var(--fg-color, #e5e7eb);\r\n  border: 1px solid var(--border-color, #1f2937);\n}\n.nkd-mono[data-v-8d42311c] {\r\n  font-size: 10px;\r\n  font-family: monospace;\r\n  color: var(--fg-color, #cbd5e1);\r\n  min-width: 28px;\r\n  font-variant-numeric: tabular-nums;\r\n  flex-shrink: 0;\n}\n.nkd-spacer[data-v-8d42311c] { flex: 1; min-width: 4px;\n}\r\n\r\n/* ── Unified button (matches .rl-btn) ───────────────────────────────────── */\n.nkd-btn[data-v-8d42311c] {\r\n  font-size: 11px;\r\n  font-family: var(--font-family, sans-serif);\r\n  background: var(--comfy-input-bg, #252830);\r\n  border: 1px solid var(--border-color, #3a3d46);\r\n  color: var(--input-text, rgba(255,255,255,0.65));\r\n  border-radius: 5px;\r\n  padding: 2px 8px;\r\n  cursor: pointer;\r\n  line-height: 1.5;\r\n  white-space: nowrap;\r\n  flex-shrink: 0;\r\n  transition: border-color 0.12s, color 0.12s, background 0.12s;\n}\n.nkd-btn[data-v-8d42311c]:hover:not(:disabled) {\r\n  border-color: var(--p-primary-color, #4ab4ff);\r\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--active[data-v-8d42311c] {\r\n  border-color: var(--p-primary-color, #4ab4ff);\r\n  color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-btn[data-v-8d42311c]:disabled,\r\n.nkd-btn--disabled[data-v-8d42311c] {\r\n  opacity: 0.35;\r\n  cursor: not-allowed;\n}\r\n\r\n/* Reference-row buttons keep the semantic amber accent */\n.nkd-btn--ref[data-v-8d42311c]:hover:not(:disabled) {\r\n  border-color: var(--nkd-ref-accent, #ffb43c);\r\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--ref-active[data-v-8d42311c] {\r\n  border-color: var(--nkd-ref-accent, #ffb43c);\r\n  color: var(--nkd-ref-accent, #ffb43c);\n}\n.nkd-info[data-v-8d42311c] {\r\n  font-size: 10px;\r\n  font-family: monospace;\r\n  color: var(--descrip-text, rgba(180,210,255,0.65));\r\n  white-space: nowrap;\r\n  font-variant-numeric: tabular-nums;\n}\n.nkd-hint[data-v-8d42311c] {\r\n  font-size: 9.5px;\r\n  color: var(--descrip-text, rgba(255,255,255,0.32));\r\n  opacity: 0.7;\n}\r\n\r\n/* Canvas */\n.nkd-canvas[data-v-8d42311c] {\r\n  display: block;\r\n  width: 100%;\r\n  height: auto;\r\n  cursor: crosshair;\r\n  background: var(--comfy-input-bg, #111318);\n}'));
+      elementStyle.appendChild(document.createTextNode('/* ── Root — shared visual language with Relight / Lens Blur ─────────────── */\n.nkd-root[data-v-601dc9d7] {\r\n  display: flex;\r\n  flex-direction: column;\r\n  height: 100%;\r\n  background: var(--comfy-menu-bg, #111318);\r\n  overflow: hidden;\r\n  border-radius: 8px;\r\n  font-family: var(--font-family, "Inter", sans-serif);\r\n  font-size: 11px;\r\n  color: var(--fg-color, #c8d0e0);\r\n  user-select: none;\n}\r\n/* Universal border-box inside the widget — prevents fixed-width children\r\n   from overflowing the node and "bleeding" past its border. */\n.nkd-root[data-v-601dc9d7], .nkd-root[data-v-601dc9d7] *, .nkd-root[data-v-601dc9d7] *::before, .nkd-root[data-v-601dc9d7] *::after {\r\n  box-sizing: border-box;\n}\r\n\r\n/* ── Controls bar (single container, internal row separators) ──────────── */\n.nkd-bar[data-v-601dc9d7] {\r\n  display: flex;\r\n  flex-direction: column;\r\n  background: var(--comfy-menu-bg, #1a1c22);\r\n  border-bottom: 1px solid var(--border-color, #2a2d36);\r\n  min-width: 0;\n}\n.nkd-row[data-v-601dc9d7] {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  flex-wrap: nowrap;\r\n  overflow: hidden;\r\n  min-width: 0;\n}\n.nkd-row--controls[data-v-601dc9d7] { padding: 5px 8px 3px;\n}\n.nkd-row--presets[data-v-601dc9d7]  { padding: 3px 8px;     border-top: 1px solid var(--border-color, rgba(255,255,255,0.06));\n}\n.nkd-row--ref[data-v-601dc9d7]      { padding: 3px 8px;     border-top: 1px solid var(--nkd-ref-accent, rgba(255,180,60,0.2));\n}\n.nkd-row--hint[data-v-601dc9d7]     { padding: 3px 8px 5px;\n}\n.nkd-select--preset[data-v-601dc9d7] { flex: 1 1 auto; min-width: 0; max-width: 240px;\n}\n.nkd-btn--preset[data-v-601dc9d7]    { padding: 2px 8px;\n}\n.nkd-label[data-v-601dc9d7] {\r\n  font-size: 10px;\r\n  color: var(--descrip-text, rgba(255,255,255,0.45));\r\n  white-space: nowrap;\r\n  flex-shrink: 0;\n}\r\n\r\n/* ── Select (themed to ComfyUI) ─────────────────────────────────────────── */\n.nkd-select[data-v-601dc9d7] {\r\n  font-size: 11px;\r\n  background: var(--comfy-input-bg, #252830);\r\n  border: 1px solid var(--border-color, #3a3d46);\r\n  color: var(--input-text, #c8d0e0);\r\n  border-radius: 5px;\r\n  padding: 2px 6px;\r\n  cursor: pointer;\r\n  outline: none;\r\n  transition: border-color 0.12s;\n}\n.nkd-select[data-v-601dc9d7]:hover,\r\n.nkd-select[data-v-601dc9d7]:focus { border-color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-divider[data-v-601dc9d7] {\r\n  width: 1px; height: 14px;\r\n  background: var(--border-color, rgba(255,255,255,0.12));\r\n  margin: 0 2px;\r\n  flex-shrink: 0;\n}\n.nkd-group[data-v-601dc9d7] {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  min-width: 0;\n}\r\n\r\n/* ── Slider (matches .rl-range / .lb-range in the other NKD nodes) ──────── */\n.nkd-slider[data-v-601dc9d7] {\r\n  width: 80px;\r\n  height: 14px;\r\n  margin: 0;\r\n  background: transparent;\r\n  cursor: pointer;\r\n  flex-shrink: 0;\r\n  -webkit-appearance: none;\r\n  appearance: none;\n}\n.nkd-slider[data-v-601dc9d7]::-webkit-slider-runnable-track {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: linear-gradient(\r\n    to right,\r\n    var(--p-primary-color, #4ab4ff) 0 var(--nkd-fill, 0%),\r\n    var(--comfy-input-bg, #252830) var(--nkd-fill, 0%) 100%\r\n  );\n}\n.nkd-slider[data-v-601dc9d7]::-webkit-slider-thumb {\r\n  -webkit-appearance: none;\r\n  appearance: none;\r\n  margin-top: -4px;\r\n  width: 13px;\r\n  height: 13px;\r\n  border-radius: 50%;\r\n  background: var(--fg-color, #e5e7eb);\r\n  border: 1px solid var(--border-color, #1f2937);\r\n  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);\n}\n.nkd-slider[data-v-601dc9d7]::-moz-range-track {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: var(--comfy-input-bg, #252830);\n}\n.nkd-slider[data-v-601dc9d7]::-moz-range-progress {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: var(--p-primary-color, #4ab4ff);\n}\n.nkd-slider[data-v-601dc9d7]::-moz-range-thumb {\r\n  width: 13px;\r\n  height: 13px;\r\n  border-radius: 50%;\r\n  background: var(--fg-color, #e5e7eb);\r\n  border: 1px solid var(--border-color, #1f2937);\n}\n.nkd-mono[data-v-601dc9d7] {\r\n  font-size: 10px;\r\n  font-family: monospace;\r\n  color: var(--fg-color, #cbd5e1);\r\n  min-width: 28px;\r\n  font-variant-numeric: tabular-nums;\r\n  flex-shrink: 0;\n}\n.nkd-spacer[data-v-601dc9d7] { flex: 1; min-width: 4px;\n}\r\n\r\n/* ── Unified button (matches .rl-btn) ───────────────────────────────────── */\n.nkd-btn[data-v-601dc9d7] {\r\n  font-size: 11px;\r\n  font-family: var(--font-family, sans-serif);\r\n  background: var(--comfy-input-bg, #252830);\r\n  border: 1px solid var(--border-color, #3a3d46);\r\n  color: var(--input-text, rgba(255,255,255,0.65));\r\n  border-radius: 5px;\r\n  padding: 2px 8px;\r\n  cursor: pointer;\r\n  line-height: 1.5;\r\n  white-space: nowrap;\r\n  flex-shrink: 0;\r\n  transition: border-color 0.12s, color 0.12s, background 0.12s;\n}\n.nkd-btn[data-v-601dc9d7]:hover:not(:disabled) {\r\n  border-color: var(--p-primary-color, #4ab4ff);\r\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--active[data-v-601dc9d7] {\r\n  border-color: var(--p-primary-color, #4ab4ff);\r\n  color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-btn[data-v-601dc9d7]:disabled,\r\n.nkd-btn--disabled[data-v-601dc9d7] {\r\n  opacity: 0.35;\r\n  cursor: not-allowed;\n}\r\n\r\n/* Reference-row buttons keep the semantic amber accent */\n.nkd-btn--ref[data-v-601dc9d7]:hover:not(:disabled) {\r\n  border-color: var(--nkd-ref-accent, #ffb43c);\r\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--ref-active[data-v-601dc9d7] {\r\n  border-color: var(--nkd-ref-accent, #ffb43c);\r\n  color: var(--nkd-ref-accent, #ffb43c);\n}\n.nkd-info[data-v-601dc9d7] {\r\n  font-size: 10px;\r\n  font-family: monospace;\r\n  color: var(--descrip-text, rgba(180,210,255,0.65));\r\n  white-space: nowrap;\r\n  font-variant-numeric: tabular-nums;\n}\n.nkd-hint[data-v-601dc9d7] {\r\n  font-size: 9.5px;\r\n  color: var(--descrip-text, rgba(255,255,255,0.32));\r\n  opacity: 0.7;\n}\r\n\r\n/* Canvas */\n.nkd-canvas[data-v-601dc9d7] {\r\n  display: block;\r\n  width: 100%;\r\n  height: auto;\r\n  cursor: crosshair;\r\n  background: var(--comfy-input-bg, #111318);\n}'));
       document.head.appendChild(elementStyle);
     }
   } catch (e) {

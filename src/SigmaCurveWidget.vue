@@ -108,7 +108,8 @@
 
       <!-- Row 3: hint + live info -->
       <div class="nkd-row nkd-row--hint">
-        <span class="nkd-info">S: {{ extSteps }} | σmax: {{ fmtSigma(extMaxSigma) }}</span>
+        <span v-if="(xUnit ?? 'steps') === 'steps'" class="nkd-info">S: {{ extSteps }} | σmax: {{ fmtSigma(extMaxSigma) }}</span>
+        <span v-else class="nkd-info">{{ yLabel ?? 'y' }}: {{ fmtSigma(extYMin) }} → {{ fmtSigma(extMaxSigma) }}</span>
         <div class="nkd-spacer" />
         <span class="nkd-hint">
           Click=add · Drag=move · Shift+click=delete<span v-if="!endpointsLocked"> · Endpoints unlocked</span>
@@ -193,6 +194,11 @@ const props = defineProps<{
   maxSigmaWidget?:    { value: number } | null;
   refSigmasWidget?:   { value: number[] | null } | null;
   onFetchReference?:  () => void;
+  // Axis presentation. Defaults reproduce the sigma editor exactly; the H3
+  // audio-shift node overrides them to read as shift values over progress.
+  yMinWidget?:        { value: number } | null;   // y=0 maps here (default 0)
+  yLabel?:            string;                     // rotated Y caption (default "σ")
+  xUnit?:             "steps" | "progress";       // X ticks (default "steps")
 }>();
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -238,6 +244,7 @@ const selectedPreset = ref<string>("");           // "" or preset name
 // External widget values (live-read each draw)
 const extSteps    = computed(() => +(props.stepsWidget?.value    ?? 20));
 const extMaxSigma = computed(() => +(props.maxSigmaWidget?.value ?? 1.0));
+const extYMin     = computed(() => +(props.yMinWidget?.value     ?? 0.0));
 
 // Snap is only active when explicitly enabled AND steps <= 15
 const snapEnabled = computed(() => snapToSteps.value && extSteps.value <= 15);
@@ -599,11 +606,13 @@ function drawPointTooltip(): void {
   const cx  = toCanvasX(pt[0]);
   const cy  = toCanvasY(pt[1]);
   const ms  = extMaxSigma.value;
+  const y0  = extYMin.value;
   const steps = extSteps.value;
 
-  const stepVal  = Math.round(pt[0] * steps);
-  const sigmaVal = (pt[1] * ms).toFixed(3);
-  const label    = `step ${stepVal}  σ ${sigmaVal}`;
+  const byStep   = (props.xUnit ?? "steps") === "steps";
+  const xVal     = byStep ? `step ${Math.round(pt[0] * steps)}` : `t ${pt[0].toFixed(2)}`;
+  const yVal     = (y0 + pt[1] * (ms - y0)).toFixed(3);
+  const label    = `${xVal}  ${props.yLabel ?? "σ"} ${yVal}`;
 
   const PAD_X = 6, PAD_Y = 4;
   const FONT  = "10px monospace";
@@ -719,38 +728,42 @@ function drawSnapGrid(): void {
 
 function drawAxisLabels(): void {
   const ms    = extMaxSigma.value;
+  const y0    = extYMin.value;
   const steps = extSteps.value;
+  const byStep = (props.xUnit ?? "steps") === "steps";
 
   ctx!.save();
   ctx!.font = "9px monospace";
 
-  // Y-axis (actual sigma values) — always 2 decimal places
+  // Y-axis (actual values) — always 3 decimal places. y=0 maps to yMin, which
+  // is 0 for sigmas and the range floor for a shift curve.
   ctx!.textAlign    = "right";
   ctx!.textBaseline = "middle";
   [0, 0.25, 0.5, 0.75, 1].forEach(v => {
     ctx!.fillStyle = (v === 0 || v === 1) ? C.axisLabel : C.axisLabelDim;
-    ctx!.fillText((v * ms).toFixed(3), PAD.left - 4, toCanvasY(v));
+    ctx!.fillText((y0 + v * (ms - y0)).toFixed(3), PAD.left - 4, toCanvasY(v));
   });
 
-  // X-axis (step numbers)
+  // X-axis (step numbers, or normalised progress)
   ctx!.textAlign    = "center";
   ctx!.textBaseline = "top";
   ctx!.fillStyle    = C.axisLabel;
-  ctx!.fillText("0",           PAD.left,        PAD.top + IH + 4);
-  ctx!.fillText(String(steps), PAD.left + IW,   PAD.top + IH + 4);
+  ctx!.fillText("0",                                PAD.left,      PAD.top + IH + 4);
+  ctx!.fillText(byStep ? String(steps) : "1",       PAD.left + IW, PAD.top + IH + 4);
   ctx!.fillStyle = C.axisLabelDim;
-  ctx!.fillText(String(Math.round(steps / 2)), PAD.left + IW / 2, PAD.top + IH + 4);
+  ctx!.fillText(byStep ? String(Math.round(steps / 2)) : "0.5",
+                PAD.left + IW / 2, PAD.top + IH + 4);
 
   // Axis name labels
   ctx!.font      = "8px sans-serif";
   ctx!.fillStyle = C.axisLabelDim;
   ctx!.textBaseline = "bottom";
-  ctx!.fillText("steps →", PAD.left + IW * 0.75, CH - 1);
+  ctx!.fillText(byStep ? "steps →" : "progress →", PAD.left + IW * 0.75, CH - 1);
   ctx!.save();
   ctx!.translate(8, PAD.top + IH / 2);
   ctx!.rotate(-Math.PI / 2);
   ctx!.textAlign = "center"; ctx!.textBaseline = "middle";
-  ctx!.fillText("σ", 0, 0);
+  ctx!.fillText(props.yLabel ?? "σ", 0, 0);
   ctx!.restore();
 
   ctx!.restore();

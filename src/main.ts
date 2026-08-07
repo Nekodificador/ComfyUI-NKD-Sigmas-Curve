@@ -15,8 +15,35 @@ import { app as comfyApp } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import SigmaCurveWidget from "@/SigmaCurveWidget.vue";
 
-const NODE_NAME = "NKDSigmasCurve";
 const EXT_NAME  = "NKD.SigmasCurve.Vue";
+
+/** Per-node-type presentation. Same editor, different axes. */
+type CurveNodeOpts = {
+  /** Widget driving the Y-axis top label, and the node's own value range. */
+  maxWidget:  string;
+  /** Widget driving the Y-axis bottom label; absent means y=0 reads as 0. */
+  minWidget?: string;
+  /** Widget driving the X-axis tick labels; absent means normalised progress. */
+  stepsWidget?: string;
+  /** Rotated caption on the Y axis. */
+  yLabel?: string;
+  /** Whether the node has a reference_sigmas input to overlay. */
+  hasReference: boolean;
+};
+
+const CURVE_NODES: Record<string, CurveNodeOpts> = {
+  NKDSigmasCurve: {
+    maxWidget: "max_sigma",
+    stepsWidget: "steps",
+    hasReference: true,
+  },
+  NKDH3AudioShiftCurve: {
+    maxWidget: "mult_max",
+    minWidget: "mult_min",
+    yLabel: "× shift",
+    hasReference: false,
+  },
+};
 
 function keepDomWidgetSized(node: any, container: HTMLElement): () => void {
   const MAX_MARGIN = 40;
@@ -59,7 +86,13 @@ comfyApp.registerExtension({
     nodeData: { name: string },
     _app: any
   ): Promise<void> {
-    if (nodeData.name !== NODE_NAME) return;
+    const opts = CURVE_NODES[nodeData.name];
+    if (!opts) return;
+
+    // "Refresh node definitions" re-runs this hook on the SAME prototype; without
+    // the guard the wraps stack and every node ends up with duplicated widgets.
+    if (nodeType.prototype.__nkdWrapped) return;
+    nodeType.prototype.__nkdWrapped = true;
 
     const origCreated: (() => void) | undefined =
       nodeType.prototype.onNodeCreated;
@@ -71,13 +104,19 @@ comfyApp.registerExtension({
       const curveDataWidget = this.widgets?.find(
         (w: any) => w.name === "curve_data"
       );
-      const stepsWidget    = this.widgets?.find((w: any) => w.name === "steps");
-      const maxSigmaWidget = this.widgets?.find((w: any) => w.name === "max_sigma");
+      const stepsWidget    = opts.stepsWidget
+        ? this.widgets?.find((w: any) => w.name === opts.stepsWidget)
+        : null;
+      const maxSigmaWidget = this.widgets?.find((w: any) => w.name === opts.maxWidget);
+      const minWidget      = opts.minWidget
+        ? this.widgets?.find((w: any) => w.name === opts.minWidget)
+        : null;
 
       // Reactive wrappers so the Vue computed values re-run when the
       // LiteGraph widget values change (plain objects are not reactive).
       const stepsProxy    = reactive({ value: stepsWidget?.value    ?? 20 });
       const maxSigmaProxy = reactive({ value: maxSigmaWidget?.value ?? 1  });
+      const minProxy      = reactive({ value: minWidget?.value      ?? 0  });
 
       // Hide curve_data from the UI entirely. socketless=True in the Python
       // schema is not honored by the V3 frontend: it both renders the widget
@@ -111,9 +150,12 @@ comfyApp.registerExtension({
           if (curveDataWidget) curveDataWidget.value = json;
           this.setDirtyCanvas(true);
         },
-        stepsWidget:       stepsProxy,
+        stepsWidget:       opts.stepsWidget ? stepsProxy : null,
         maxSigmaWidget:    maxSigmaProxy,
-        onFetchReference:  () => fetchReference(),
+        yMinWidget:        opts.minWidget ? minProxy : null,
+        yLabel:            opts.yLabel,
+        xUnit:             opts.stepsWidget ? "steps" : "progress",
+        onFetchReference:  opts.hasReference ? () => fetchReference() : undefined,
       });
 
       const instance = vueApp.mount(container) as InstanceType<
@@ -156,16 +198,18 @@ comfyApp.registerExtension({
         comfyApp.queuePrompt(0, 1, [self.id]);
       }
 
-      api.addEventListener("executed", onExecuted);
+      if (opts.hasReference) {
+        api.addEventListener("executed", onExecuted);
 
-      // Clear reference overlay when the link is removed
-      const origConnectChange = this.onConnectionsChange;
-      this.onConnectionsChange = function (this: any) {
-        origConnectChange?.apply(this, arguments as any);
-        const refInput = self.inputs?.find((inp: any) => inp.name === "reference_sigmas");
-        const connected = !!refInput?.link;
-        instance.setReferenceConnected?.(connected);
-      };
+        // Clear reference overlay when the link is removed
+        const origConnectChange = this.onConnectionsChange;
+        this.onConnectionsChange = function (this: any) {
+          origConnectChange?.apply(this, arguments as any);
+          const refInput = self.inputs?.find((inp: any) => inp.name === "reference_sigmas");
+          const connected = !!refInput?.link;
+          instance.setReferenceConnected?.(connected);
+        };
+      }
 
       // ── Resolve the effective value of an input ──────────────────────
       // When a widget has been converted to an input and a link is wired
@@ -211,6 +255,13 @@ comfyApp.registerExtension({
           if (maxSigmaProxy.value !== value) maxSigmaProxy.value = value;
         };
       }
+      if (minWidget) {
+        const origCb = minWidget.callback;
+        minWidget.callback = function (this: any, value: any) {
+          origCb?.call(this, value);
+          if (minProxy.value !== value) minProxy.value = value;
+        };
+      }
 
       // Fallback (v1 only): onDrawBackground fires every canvas frame.
       // Also used as a retry loop for the v1 blank-widget-on-first-load issue.
@@ -220,10 +271,16 @@ comfyApp.registerExtension({
         origDrawBg?.apply(this, arguments as any);
         // Resolve effective values (upstream link wins over local widget) so
         // the preview updates live when steps/max_sigma come from another node.
-        const effSteps    = resolveInputValue("steps", 20);
-        const effMaxSigma = resolveInputValue("max_sigma", 1.0);
-        if (stepsProxy.value    !== effSteps)    stepsProxy.value    = effSteps;
-        if (maxSigmaProxy.value !== effMaxSigma) maxSigmaProxy.value = effMaxSigma;
+        if (opts.stepsWidget) {
+          const effSteps = resolveInputValue(opts.stepsWidget, 20);
+          if (stepsProxy.value !== effSteps) stepsProxy.value = effSteps;
+        }
+        const effMax = resolveInputValue(opts.maxWidget, 1.0);
+        if (maxSigmaProxy.value !== effMax) maxSigmaProxy.value = effMax;
+        if (opts.minWidget) {
+          const effMin = resolveInputValue(opts.minWidget, 0.0);
+          if (minProxy.value !== effMin) minProxy.value = effMin;
+        }
         // Once the canvas has real CSS dimensions, forceResize resolves the
         // blank-widget-on-first-load issue in v1 mode.
         if (v1NeedsInit && instance.forceResize?.()) v1NeedsInit = false;
@@ -351,7 +408,7 @@ comfyApp.registerExtension({
       const origRemoved = this.onRemoved;
       this.onRemoved = function (this: any) {
         _nkdW();
-        api.removeEventListener("executed", onExecuted);
+        if (opts.hasReference) api.removeEventListener("executed", onExecuted);
         barObserver.disconnect();
         instance.cleanup?.();
         vueApp.unmount();
