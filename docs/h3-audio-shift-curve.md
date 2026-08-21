@@ -8,8 +8,15 @@ Low shift makes the audio resolve early and the video lock onto it. High shift k
 both streams moving together. Being able to change that across the run means you can
 have one at the start and the other by the end.
 
-```
-Model ──▶ MiniMaxH3SigmaShift ──▶ 😺NKD H3 Audio Shift Curve ──▶ model ──▶ (sampler)
+```mermaid
+flowchart LR
+    M(["Model"]):::input --> SS(["MiniMaxH3SigmaShift"]):::external
+    SS --> CURVE["**NKD H3 Audio Shift Curve**"]:::nkd
+    CURVE -- model --> SAMP(["your sampler"]):::external
+
+    classDef nkd fill:#3b3b6b,stroke:#8ab4ff,stroke-width:2px,color:#fff
+    classDef input fill:#2d2d2d,stroke:#888,color:#eee
+    classDef external fill:#2d2d2d,stroke:#888,color:#eee
 ```
 
 - `mult_min` (default 0.5) is what the bottom of the curve multiplies the incoming
