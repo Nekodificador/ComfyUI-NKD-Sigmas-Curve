@@ -10,6 +10,10 @@ https://github.com/user-attachments/assets/281fa043-0900-4e7b-883d-1018953b01e0
 
 This is all with a fixed seed. As you can see, specially in the las 2 generations. Tuning the sigma curve lets you nail the shapes and details at just the right moment during generation. For instance, I use it to swap out a bare chest for a T-shirt on the fly.
 
+## Reference Sigmas
+With the latest version you can also use it to study standar schedulers or start from them
+
+https://github.com/user-attachments/assets/41f8b72d-c270-4aa5-ab08-32de1e82d3bb
 
 ## How it works / How to use it
 
@@ -18,6 +22,8 @@ This is all with a fixed seed. As you can see, specially in the las 2 generation
 - If you know nothing about sigmas, treat the _max_sigma_ value as your new "denoise" setting (kind of).
 - The curve is your new "scheduler" (you're basically drawing it yourself instead of picking one from a dropdown).
 - You can choose between linear curve or b-spline type. Up to you.
+
+
 
 ## Features
 
