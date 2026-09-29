@@ -50,15 +50,7 @@ function keepDomWidgetSized(node: any, container: HTMLElement): () => void {
   let enforcingW = false;
   let goodMargin = 15;
   const vueMode = () => !!(window as any).LiteGraph?.vueNodesMode;
-  // The frontend wraps the widget in an overflow:hidden box that can still be
-  // scrolled (focus, tiny transient height on load); that slides the controls
-  // bar out of view. Pin it back to the origin.
-  const unscroll = () => {
-    const host = container.parentElement;
-    if (host && (host.scrollTop || host.scrollLeft)) { host.scrollTop = 0; host.scrollLeft = 0; }
-  };
   const clamp = () => {
-    unscroll();
     if (enforcingW) return;
     if (vueMode()) { if (container.style.width) container.style.width = ""; return; }
     const nodeW = node.size?.[0]; if (!nodeW) return;
@@ -83,14 +75,7 @@ function keepDomWidgetSized(node: any, container: HTMLElement): () => void {
   const origResize = node.onResize;
   node.onResize = function () { origResize?.apply(this, arguments); clamp(); };
   const iv = window.setInterval(clamp, 250);
-  // scroll doesn't bubble: catch it on the wrapper as soon as it is mounted.
-  const hostTimer = window.setInterval(() => {
-    const host = container.parentElement;
-    if (!host) return;
-    clearInterval(hostTimer);
-    host.addEventListener("scroll", unscroll);
-  }, 100);
-  return () => { ro.disconnect(); clearInterval(iv); clearInterval(hostTimer); };
+  return () => { ro.disconnect(); clearInterval(iv); };
 }
 
 comfyApp.registerExtension({
@@ -393,7 +378,7 @@ comfyApp.registerExtension({
       // flipped ±1px each reflow, re-triggering setSize → ResizeObserver. The
       // border-box offsetHeight is an integer and transform-independent.
       const remeasureBar = () => {
-        const barEl = container.querySelector(".nkd-bar") as HTMLElement | null;
+        const barEl = container.querySelector(".nkd-sc-bar") as HTMLElement | null;
         const measured = barEl ? barEl.offsetHeight : 0;
         if (measured > 0 && measured !== barH) {
           barH = measured;
@@ -415,7 +400,7 @@ comfyApp.registerExtension({
       // Re-measure whenever the bar grows or shrinks (e.g. reference row appearing)
       const barObserver = new ResizeObserver(remeasureBar);
       requestAnimationFrame(() => {
-        const barEl = container.querySelector(".nkd-bar") as HTMLElement | null;
+        const barEl = container.querySelector(".nkd-sc-bar") as HTMLElement | null;
         if (barEl) barObserver.observe(barEl);
       });
 

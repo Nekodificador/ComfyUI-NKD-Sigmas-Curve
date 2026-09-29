@@ -6458,7 +6458,7 @@ function normalizeContainer(container) {
   return container;
 }
 const _hoisted_1 = { class: "nkd-root" };
-const _hoisted_2 = { class: "nkd-bar" };
+const _hoisted_2 = { class: "nkd-sc-bar" };
 const _hoisted_3 = { class: "nkd-row nkd-row--controls" };
 const _hoisted_4 = { class: "nkd-group" };
 const _hoisted_5 = { class: "nkd-mono" };
@@ -7493,7 +7493,7 @@ const _export_sfc = (sfc, props) => {
   }
   return target;
 };
-const SigmaCurveWidget = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-a7d1b8dd"]]);
+const SigmaCurveWidget = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-708cf9e1"]]);
 const EXT_NAME = "NKD.SigmasCurve.Vue";
 const CURVE_NODES = {
   NKDSigmasCurve: {
@@ -7516,16 +7516,8 @@ function keepDomWidgetSized(node, container) {
     var _a;
     return !!((_a = window.LiteGraph) == null ? void 0 : _a.vueNodesMode);
   };
-  const unscroll = () => {
-    const host = container.parentElement;
-    if (host && (host.scrollTop || host.scrollLeft)) {
-      host.scrollTop = 0;
-      host.scrollLeft = 0;
-    }
-  };
   const clamp = () => {
     var _a;
-    unscroll();
     if (enforcingW) return;
     if (vueMode()) {
       if (container.style.width) container.style.width = "";
@@ -7567,16 +7559,9 @@ function keepDomWidgetSized(node, container) {
     clamp();
   };
   const iv = window.setInterval(clamp, 250);
-  const hostTimer = window.setInterval(() => {
-    const host = container.parentElement;
-    if (!host) return;
-    clearInterval(hostTimer);
-    host.addEventListener("scroll", unscroll);
-  }, 100);
   return () => {
     ro.disconnect();
     clearInterval(iv);
-    clearInterval(hostTimer);
   };
 }
 app.registerExtension({
@@ -7771,7 +7756,7 @@ app.registerExtension({
         if ((_a2 = instance.forceResize) == null ? void 0 : _a2.call(instance)) v1NeedsInit = false;
       };
       const remeasureBar = () => {
-        const barEl = container.querySelector(".nkd-bar");
+        const barEl = container.querySelector(".nkd-sc-bar");
         const measured = barEl ? barEl.offsetHeight : 0;
         if (measured > 0 && measured !== barH) {
           barH = measured;
@@ -7790,7 +7775,7 @@ app.registerExtension({
       });
       const barObserver = new ResizeObserver(remeasureBar);
       requestAnimationFrame(() => {
-        const barEl = container.querySelector(".nkd-bar");
+        const barEl = container.querySelector(".nkd-sc-bar");
         if (barEl) barObserver.observe(barEl);
       });
       const origRemoved = this.onRemoved;
@@ -7812,7 +7797,7 @@ app.registerExtension({
   try {
     if (typeof document != "undefined") {
       var elementStyle = document.createElement("style");
-      elementStyle.appendChild(document.createTextNode('/* ── Root — shared visual language with Relight / Lens Blur ─────────────── */\n.nkd-root[data-v-a7d1b8dd] {\r\n  display: flex;\r\n  flex-direction: column;\r\n  height: 100%;\r\n  background: var(--comfy-menu-bg, #111318);\r\n  /* clip, not hidden: hidden is still programmatically scrollable (focus /\r\n     scrollIntoView), which slid the controls bar out of view. */\r\n  overflow: clip;\r\n  border-radius: 8px;\r\n  font-family: var(--font-family, "Inter", sans-serif);\r\n  font-size: 11px;\r\n  color: var(--fg-color, #c8d0e0);\r\n  user-select: none;\n}\r\n/* Universal border-box inside the widget — prevents fixed-width children\r\n   from overflowing the node and "bleeding" past its border. */\n.nkd-root[data-v-a7d1b8dd], .nkd-root[data-v-a7d1b8dd] *, .nkd-root[data-v-a7d1b8dd] *::before, .nkd-root[data-v-a7d1b8dd] *::after {\r\n  box-sizing: border-box;\n}\r\n\r\n/* ── Controls bar (single container, internal row separators) ──────────── */\n.nkd-bar[data-v-a7d1b8dd] {\r\n  flex: none; /* never let a short widget squash the bar to 0 */\r\n  display: flex;\r\n  flex-direction: column;\r\n  background: var(--comfy-menu-bg, #1a1c22);\r\n  border-bottom: 1px solid var(--border-color, #2a2d36);\r\n  min-width: 0;\n}\n.nkd-row[data-v-a7d1b8dd] {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  flex-wrap: nowrap;\r\n  overflow: hidden;\r\n  min-width: 0;\n}\n.nkd-row--controls[data-v-a7d1b8dd] { padding: 5px 8px 3px;\n}\n.nkd-row--presets[data-v-a7d1b8dd]  { padding: 3px 8px;     border-top: 1px solid var(--border-color, rgba(255,255,255,0.06));\n}\n.nkd-row--ref[data-v-a7d1b8dd]      { padding: 3px 8px;     border-top: 1px solid var(--nkd-ref-accent, rgba(255,180,60,0.2));\n}\n.nkd-row--hint[data-v-a7d1b8dd]     { padding: 3px 8px 5px;\n}\n.nkd-select--preset[data-v-a7d1b8dd] { flex: 1 1 auto; min-width: 0; max-width: 240px;\n}\n.nkd-btn--preset[data-v-a7d1b8dd]    { padding: 2px 8px;\n}\n.nkd-label[data-v-a7d1b8dd] {\r\n  font-size: 10px;\r\n  color: var(--descrip-text, rgba(255,255,255,0.45));\r\n  white-space: nowrap;\r\n  flex-shrink: 0;\n}\r\n\r\n/* ── Select (themed to ComfyUI) ─────────────────────────────────────────── */\n.nkd-select[data-v-a7d1b8dd] {\r\n  font-size: 11px;\r\n  background: var(--comfy-input-bg, #252830);\r\n  border: 1px solid var(--border-color, #3a3d46);\r\n  color: var(--input-text, #c8d0e0);\r\n  border-radius: 5px;\r\n  padding: 2px 6px;\r\n  cursor: pointer;\r\n  outline: none;\r\n  transition: border-color 0.12s;\n}\n.nkd-select[data-v-a7d1b8dd]:hover,\r\n.nkd-select[data-v-a7d1b8dd]:focus { border-color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-divider[data-v-a7d1b8dd] {\r\n  width: 1px; height: 14px;\r\n  background: var(--border-color, rgba(255,255,255,0.12));\r\n  margin: 0 2px;\r\n  flex-shrink: 0;\n}\n.nkd-group[data-v-a7d1b8dd] {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  min-width: 0;\n}\r\n\r\n/* ── Slider (matches .rl-range / .lb-range in the other NKD nodes) ──────── */\n.nkd-slider[data-v-a7d1b8dd] {\r\n  width: 80px;\r\n  height: 14px;\r\n  margin: 0;\r\n  background: transparent;\r\n  cursor: pointer;\r\n  flex-shrink: 0;\r\n  -webkit-appearance: none;\r\n  appearance: none;\n}\n.nkd-slider[data-v-a7d1b8dd]::-webkit-slider-runnable-track {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: linear-gradient(\r\n    to right,\r\n    var(--p-primary-color, #4ab4ff) 0 var(--nkd-fill, 0%),\r\n    var(--comfy-input-bg, #252830) var(--nkd-fill, 0%) 100%\r\n  );\n}\n.nkd-slider[data-v-a7d1b8dd]::-webkit-slider-thumb {\r\n  -webkit-appearance: none;\r\n  appearance: none;\r\n  margin-top: -4px;\r\n  width: 13px;\r\n  height: 13px;\r\n  border-radius: 50%;\r\n  background: var(--fg-color, #e5e7eb);\r\n  border: 1px solid var(--border-color, #1f2937);\r\n  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);\n}\n.nkd-slider[data-v-a7d1b8dd]::-moz-range-track {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: var(--comfy-input-bg, #252830);\n}\n.nkd-slider[data-v-a7d1b8dd]::-moz-range-progress {\r\n  height: 5px;\r\n  border-radius: 3px;\r\n  background: var(--p-primary-color, #4ab4ff);\n}\n.nkd-slider[data-v-a7d1b8dd]::-moz-range-thumb {\r\n  width: 13px;\r\n  height: 13px;\r\n  border-radius: 50%;\r\n  background: var(--fg-color, #e5e7eb);\r\n  border: 1px solid var(--border-color, #1f2937);\n}\n.nkd-mono[data-v-a7d1b8dd] {\r\n  font-size: 10px;\r\n  font-family: monospace;\r\n  color: var(--fg-color, #cbd5e1);\r\n  min-width: 28px;\r\n  font-variant-numeric: tabular-nums;\r\n  flex-shrink: 0;\n}\n.nkd-spacer[data-v-a7d1b8dd] { flex: 1; min-width: 4px;\n}\r\n\r\n/* ── Unified button (matches .rl-btn) ───────────────────────────────────── */\n.nkd-btn[data-v-a7d1b8dd] {\r\n  font-size: 11px;\r\n  font-family: var(--font-family, sans-serif);\r\n  background: var(--comfy-input-bg, #252830);\r\n  border: 1px solid var(--border-color, #3a3d46);\r\n  color: var(--input-text, rgba(255,255,255,0.65));\r\n  border-radius: 5px;\r\n  padding: 2px 8px;\r\n  cursor: pointer;\r\n  line-height: 1.5;\r\n  white-space: nowrap;\r\n  flex-shrink: 0;\r\n  transition: border-color 0.12s, color 0.12s, background 0.12s;\n}\n.nkd-btn[data-v-a7d1b8dd]:hover:not(:disabled) {\r\n  border-color: var(--p-primary-color, #4ab4ff);\r\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--active[data-v-a7d1b8dd] {\r\n  border-color: var(--p-primary-color, #4ab4ff);\r\n  color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-btn[data-v-a7d1b8dd]:disabled,\r\n.nkd-btn--disabled[data-v-a7d1b8dd] {\r\n  opacity: 0.35;\r\n  cursor: not-allowed;\n}\r\n\r\n/* Reference-row buttons keep the semantic amber accent */\n.nkd-btn--ref[data-v-a7d1b8dd]:hover:not(:disabled) {\r\n  border-color: var(--nkd-ref-accent, #ffb43c);\r\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--ref-active[data-v-a7d1b8dd] {\r\n  border-color: var(--nkd-ref-accent, #ffb43c);\r\n  color: var(--nkd-ref-accent, #ffb43c);\n}\n.nkd-info[data-v-a7d1b8dd] {\r\n  font-size: 10px;\r\n  font-family: monospace;\r\n  color: var(--descrip-text, rgba(180,210,255,0.65));\r\n  white-space: nowrap;\r\n  font-variant-numeric: tabular-nums;\n}\n.nkd-hint[data-v-a7d1b8dd] {\r\n  font-size: 9.5px;\r\n  color: var(--descrip-text, rgba(255,255,255,0.32));\r\n  opacity: 0.7;\n}\r\n\r\n/* Canvas */\n.nkd-canvas[data-v-a7d1b8dd] {\r\n  display: block;\r\n  width: 100%;\r\n  height: auto;\r\n  cursor: crosshair;\r\n  background: var(--comfy-input-bg, #111318);\n}'));
+      elementStyle.appendChild(document.createTextNode('/* ── Root — shared visual language with Relight / Lens Blur ─────────────── */\n.nkd-root[data-v-708cf9e1] {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  background: var(--comfy-menu-bg, #111318);\n  overflow: hidden;\n  border-radius: 8px;\n  font-family: var(--font-family, "Inter", sans-serif);\n  font-size: 11px;\n  color: var(--fg-color, #c8d0e0);\n  user-select: none;\n}\n/* Universal border-box inside the widget — prevents fixed-width children\n   from overflowing the node and "bleeding" past its border. */\n.nkd-root[data-v-708cf9e1], .nkd-root[data-v-708cf9e1] *, .nkd-root[data-v-708cf9e1] *::before, .nkd-root[data-v-708cf9e1] *::after {\n  box-sizing: border-box;\n}\n\n/* ── Controls bar (single container, internal row separators) ──────────── */\n.nkd-sc-bar[data-v-708cf9e1] {\n  display: flex;\n  flex-direction: column;\n  background: var(--comfy-menu-bg, #1a1c22);\n  border-bottom: 1px solid var(--border-color, #2a2d36);\n  min-width: 0;\n}\n.nkd-row[data-v-708cf9e1] {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex-wrap: nowrap;\n  overflow: hidden;\n  min-width: 0;\n}\n.nkd-row--controls[data-v-708cf9e1] { padding: 5px 8px 3px;\n}\n.nkd-row--presets[data-v-708cf9e1]  { padding: 3px 8px;     border-top: 1px solid var(--border-color, rgba(255,255,255,0.06));\n}\n.nkd-row--ref[data-v-708cf9e1]      { padding: 3px 8px;     border-top: 1px solid var(--nkd-ref-accent, rgba(255,180,60,0.2));\n}\n.nkd-row--hint[data-v-708cf9e1]     { padding: 3px 8px 5px;\n}\n.nkd-select--preset[data-v-708cf9e1] { flex: 1 1 auto; min-width: 0; max-width: 240px;\n}\n.nkd-btn--preset[data-v-708cf9e1]    { padding: 2px 8px;\n}\n.nkd-label[data-v-708cf9e1] {\n  font-size: 10px;\n  color: var(--descrip-text, rgba(255,255,255,0.45));\n  white-space: nowrap;\n  flex-shrink: 0;\n}\n\n/* ── Select (themed to ComfyUI) ─────────────────────────────────────────── */\n.nkd-select[data-v-708cf9e1] {\n  font-size: 11px;\n  background: var(--comfy-input-bg, #252830);\n  border: 1px solid var(--border-color, #3a3d46);\n  color: var(--input-text, #c8d0e0);\n  border-radius: 5px;\n  padding: 2px 6px;\n  cursor: pointer;\n  outline: none;\n  transition: border-color 0.12s;\n}\n.nkd-select[data-v-708cf9e1]:hover,\n.nkd-select[data-v-708cf9e1]:focus { border-color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-divider[data-v-708cf9e1] {\n  width: 1px; height: 14px;\n  background: var(--border-color, rgba(255,255,255,0.12));\n  margin: 0 2px;\n  flex-shrink: 0;\n}\n.nkd-group[data-v-708cf9e1] {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n}\n\n/* ── Slider (matches .rl-range / .lb-range in the other NKD nodes) ──────── */\n.nkd-slider[data-v-708cf9e1] {\n  width: 80px;\n  height: 14px;\n  margin: 0;\n  background: transparent;\n  cursor: pointer;\n  flex-shrink: 0;\n  -webkit-appearance: none;\n  appearance: none;\n}\n.nkd-slider[data-v-708cf9e1]::-webkit-slider-runnable-track {\n  height: 5px;\n  border-radius: 3px;\n  background: linear-gradient(\n    to right,\n    var(--p-primary-color, #4ab4ff) 0 var(--nkd-fill, 0%),\n    var(--comfy-input-bg, #252830) var(--nkd-fill, 0%) 100%\n  );\n}\n.nkd-slider[data-v-708cf9e1]::-webkit-slider-thumb {\n  -webkit-appearance: none;\n  appearance: none;\n  margin-top: -4px;\n  width: 13px;\n  height: 13px;\n  border-radius: 50%;\n  background: var(--fg-color, #e5e7eb);\n  border: 1px solid var(--border-color, #1f2937);\n  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);\n}\n.nkd-slider[data-v-708cf9e1]::-moz-range-track {\n  height: 5px;\n  border-radius: 3px;\n  background: var(--comfy-input-bg, #252830);\n}\n.nkd-slider[data-v-708cf9e1]::-moz-range-progress {\n  height: 5px;\n  border-radius: 3px;\n  background: var(--p-primary-color, #4ab4ff);\n}\n.nkd-slider[data-v-708cf9e1]::-moz-range-thumb {\n  width: 13px;\n  height: 13px;\n  border-radius: 50%;\n  background: var(--fg-color, #e5e7eb);\n  border: 1px solid var(--border-color, #1f2937);\n}\n.nkd-mono[data-v-708cf9e1] {\n  font-size: 10px;\n  font-family: monospace;\n  color: var(--fg-color, #cbd5e1);\n  min-width: 28px;\n  font-variant-numeric: tabular-nums;\n  flex-shrink: 0;\n}\n.nkd-spacer[data-v-708cf9e1] { flex: 1; min-width: 4px;\n}\n\n/* ── Unified button (matches .rl-btn) ───────────────────────────────────── */\n.nkd-btn[data-v-708cf9e1] {\n  font-size: 11px;\n  font-family: var(--font-family, sans-serif);\n  background: var(--comfy-input-bg, #252830);\n  border: 1px solid var(--border-color, #3a3d46);\n  color: var(--input-text, rgba(255,255,255,0.65));\n  border-radius: 5px;\n  padding: 2px 8px;\n  cursor: pointer;\n  line-height: 1.5;\n  white-space: nowrap;\n  flex-shrink: 0;\n  transition: border-color 0.12s, color 0.12s, background 0.12s;\n}\n.nkd-btn[data-v-708cf9e1]:hover:not(:disabled) {\n  border-color: var(--p-primary-color, #4ab4ff);\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--active[data-v-708cf9e1] {\n  border-color: var(--p-primary-color, #4ab4ff);\n  color: var(--p-primary-color, #4ab4ff);\n}\n.nkd-btn[data-v-708cf9e1]:disabled,\n.nkd-btn--disabled[data-v-708cf9e1] {\n  opacity: 0.35;\n  cursor: not-allowed;\n}\n\n/* Reference-row buttons keep the semantic amber accent */\n.nkd-btn--ref[data-v-708cf9e1]:hover:not(:disabled) {\n  border-color: var(--nkd-ref-accent, #ffb43c);\n  color: var(--fg-color, rgba(255,255,255,0.95));\n}\n.nkd-btn--ref-active[data-v-708cf9e1] {\n  border-color: var(--nkd-ref-accent, #ffb43c);\n  color: var(--nkd-ref-accent, #ffb43c);\n}\n.nkd-info[data-v-708cf9e1] {\n  font-size: 10px;\n  font-family: monospace;\n  color: var(--descrip-text, rgba(180,210,255,0.65));\n  white-space: nowrap;\n  font-variant-numeric: tabular-nums;\n}\n.nkd-hint[data-v-708cf9e1] {\n  font-size: 9.5px;\n  color: var(--descrip-text, rgba(255,255,255,0.32));\n  opacity: 0.7;\n}\n\n/* Canvas */\n.nkd-canvas[data-v-708cf9e1] {\n  display: block;\n  width: 100%;\n  height: auto;\n  cursor: crosshair;\n  background: var(--comfy-input-bg, #111318);\n}'));
       document.head.appendChild(elementStyle);
     }
   } catch (e) {

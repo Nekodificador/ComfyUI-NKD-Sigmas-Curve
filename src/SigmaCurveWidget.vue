@@ -2,7 +2,7 @@
   <div class="nkd-root">
 
     <!-- ── Controls bar – row 1 ──────────────────────────────────────────── -->
-    <div class="nkd-bar">
+    <div class="nkd-sc-bar">
       <div class="nkd-row nkd-row--controls">
 
         <!-- Interpolation mode -->
@@ -1207,9 +1207,7 @@ onMounted(() => {
   flex-direction: column;
   height: 100%;
   background: var(--comfy-menu-bg, #111318);
-  /* clip, not hidden: hidden is still programmatically scrollable (focus /
-     scrollIntoView), which slid the controls bar out of view. */
-  overflow: clip;
+  overflow: hidden;
   border-radius: 8px;
   font-family: var(--font-family, "Inter", sans-serif);
   font-size: 11px;
@@ -1223,8 +1221,7 @@ onMounted(() => {
 }
 
 /* ── Controls bar (single container, internal row separators) ──────────── */
-.nkd-bar {
-  flex: none; /* never let a short widget squash the bar to 0 */
+.nkd-sc-bar {
   display: flex;
   flex-direction: column;
   background: var(--comfy-menu-bg, #1a1c22);
