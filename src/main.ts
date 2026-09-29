@@ -50,7 +50,15 @@ function keepDomWidgetSized(node: any, container: HTMLElement): () => void {
   let enforcingW = false;
   let goodMargin = 15;
   const vueMode = () => !!(window as any).LiteGraph?.vueNodesMode;
+  // The frontend wraps the widget in an overflow:hidden box that can still be
+  // scrolled (focus, tiny transient height on load); that slides the controls
+  // bar out of view. Pin it back to the origin.
+  const unscroll = () => {
+    const host = container.parentElement;
+    if (host && (host.scrollTop || host.scrollLeft)) { host.scrollTop = 0; host.scrollLeft = 0; }
+  };
   const clamp = () => {
+    unscroll();
     if (enforcingW) return;
     if (vueMode()) { if (container.style.width) container.style.width = ""; return; }
     const nodeW = node.size?.[0]; if (!nodeW) return;
@@ -75,7 +83,14 @@ function keepDomWidgetSized(node: any, container: HTMLElement): () => void {
   const origResize = node.onResize;
   node.onResize = function () { origResize?.apply(this, arguments); clamp(); };
   const iv = window.setInterval(clamp, 250);
-  return () => { ro.disconnect(); clearInterval(iv); };
+  // scroll doesn't bubble: catch it on the wrapper as soon as it is mounted.
+  const hostTimer = window.setInterval(() => {
+    const host = container.parentElement;
+    if (!host) return;
+    clearInterval(hostTimer);
+    host.addEventListener("scroll", unscroll);
+  }, 100);
+  return () => { ro.disconnect(); clearInterval(iv); clearInterval(hostTimer); };
 }
 
 comfyApp.registerExtension({

@@ -7516,8 +7516,16 @@ function keepDomWidgetSized(node, container) {
     var _a;
     return !!((_a = window.LiteGraph) == null ? void 0 : _a.vueNodesMode);
   };
+  const unscroll = () => {
+    const host = container.parentElement;
+    if (host && (host.scrollTop || host.scrollLeft)) {
+      host.scrollTop = 0;
+      host.scrollLeft = 0;
+    }
+  };
   const clamp = () => {
     var _a;
+    unscroll();
     if (enforcingW) return;
     if (vueMode()) {
       if (container.style.width) container.style.width = "";
@@ -7559,9 +7567,16 @@ function keepDomWidgetSized(node, container) {
     clamp();
   };
   const iv = window.setInterval(clamp, 250);
+  const hostTimer = window.setInterval(() => {
+    const host = container.parentElement;
+    if (!host) return;
+    clearInterval(hostTimer);
+    host.addEventListener("scroll", unscroll);
+  }, 100);
   return () => {
     ro.disconnect();
     clearInterval(iv);
+    clearInterval(hostTimer);
   };
 }
 app.registerExtension({
