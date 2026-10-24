@@ -2,11 +2,12 @@
 
 A ComfyUI custom node that replaces trial-and-error sigma tuning with a visual, interactive spline editor. Design your diffusion noise schedule exactly the way you want it, then plug it straight into any sampler.
 
-The pack ships two nodes, both driven by the same curve editor:
+The pack ships four nodes:
 
 | Node | What it does |
 |---|---|
 | [😺NKD Sigmas Curve](docs/sigmas-curve.md) | Draw the noise schedule itself and feed it to any sampler. |
+| [😺NKD Sigmas Calibrate + Equalize](docs/sigmas-calibrate.md) | Measure a schedule from the model: steps go where the image is actually changing. |
 | [😺NKD H3 Audio Shift Curve](docs/h3-audio-shift-curve.md) | MiniMax H3 only: shape how the audio stream's sigma shift moves across the run. |
 
 ---

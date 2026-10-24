@@ -19,4 +19,11 @@ from .nkd_h3_audio_shift import NKDH3AudioShiftCurve  # noqa: E402
 NODE_CLASS_MAPPINGS["NKDH3AudioShiftCurve"] = NKDH3AudioShiftCurve
 NODE_DISPLAY_NAME_MAPPINGS["NKDH3AudioShiftCurve"] = "😺NKD H3 Audio Shift Curve"
 
+from .nkd_sigma_calibrate import NKDSigmasCalibrate, NKDSigmasEqualize  # noqa: E402
+
+NODE_CLASS_MAPPINGS["NKDSigmasCalibrate"] = NKDSigmasCalibrate
+NODE_DISPLAY_NAME_MAPPINGS["NKDSigmasCalibrate"] = "😺NKD Sigmas Calibrate"
+NODE_CLASS_MAPPINGS["NKDSigmasEqualize"] = NKDSigmasEqualize
+NODE_DISPLAY_NAME_MAPPINGS["NKDSigmasEqualize"] = "😺NKD Sigmas Equalize"
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
