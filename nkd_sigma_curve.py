@@ -464,12 +464,13 @@ def _register_preset_routes() -> None:
 
     routes = PromptServer.instance.routes
 
-    @routes.get("/nkd_sigma_curve/presets")
-    async def list_presets(_request):
-        return web.json_response({"user": _read_user_presets()})
-
-    @routes.post("/nkd_sigma_curve/presets")
-    async def save_preset(request):
+    # GET and POST share one handler so the preset list survives hot reloads.
+    @routes.route("*", "/nkd_sigma_curve/presets")
+    async def presets(request):
+        if request.method == "GET":
+            return web.json_response({"user": _read_user_presets()})
+        if request.method != "POST":
+            raise web.HTTPMethodNotAllowed(request.method, ["GET", "POST"])
         try:
             payload = await request.json()
         except Exception:
