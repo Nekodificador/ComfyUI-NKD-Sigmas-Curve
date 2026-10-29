@@ -1,5 +1,9 @@
 # Changelog
 
+### v1.5.1 · License
+
+The pack is now GPL-3.0, the same license as ComfyUI. Releases up to v1.5.0 stay MIT.
+
 ### v1.5.0 · Calibrate + Equalize
 
 Two new nodes that measure a noise schedule from your own model instead of picking one from a list.
