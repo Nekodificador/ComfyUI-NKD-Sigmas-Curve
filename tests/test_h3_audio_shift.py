@@ -26,7 +26,7 @@ def _load():
     deco = lambda *a, **k: (lambda f: f)  # noqa: E731
     if getattr(server.PromptServer, "instance", None) is None:
         server.PromptServer.instance = types.SimpleNamespace(
-            routes=types.SimpleNamespace(get=deco, post=deco, delete=deco, put=deco))
+            routes=types.SimpleNamespace(get=deco, post=deco, delete=deco, put=deco, route=deco))
 
     pkg = types.ModuleType("nkdsc")
     pkg.__path__ = [ROOT]
