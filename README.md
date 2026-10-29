@@ -51,6 +51,6 @@ npm run dev     # watch mode
 
 ## License
 
-MIT, use it, modify it, share it freely.
+GPL-3.0. See [LICENSE](LICENSE).
 
 [Changelog](docs/changelog.md)

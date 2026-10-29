@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "nkd-sigmas-curve"
 version = "1.5.0"
 description = "Interactive sigma schedule editor for ComfyUI — NURBS spline curve widget"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = []
 
