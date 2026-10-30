@@ -23,6 +23,11 @@ Model-agnostic: it only needs the model's own denoised prediction, so it works
 on any flow/eps model ComfyUI can sample. Calibrate with the same model patches
 (shift, LoRAs), CFG and resolution you will sample with — the profile depends on
 all of them. A latent batch > 1 averages the profile over several seeds.
+
+Video works the same (5D latents, audio+video nested latents measure the video
+part). Two-expert models such as Wan 2.2 take ``model_low``: the pass switches
+to it once sigma drops below ``boundary``, as their samplers do, and Equalize
+reports the step to split the schedule at.
 """
 
 from __future__ import annotations
@@ -118,6 +123,10 @@ class NKDSigmasCalibrate(io.ComfyNode):
                              tooltip="Steps of the reference pass. More = finer profile, slower"),
                 io.Vae.Input("vae", optional=True,
                              tooltip="Connect to get the reference pass decoded on the image output"),
+                io.Model.Input("model_low", optional=True,
+                               tooltip="Two-expert video models (Wan 2.2): the low-noise model, used below boundary"),
+                io.Float.Input("boundary", default=0.875, min=0.0, max=1.0, step=0.005,
+                               tooltip="Sigma where model_low takes over (Wan 2.2: 0.875 T2V, 0.9 I2V). Ignored without model_low"),
             ],
             outputs=[
                 SigmaProfile.Output(display_name="profile"),
@@ -128,7 +137,8 @@ class NKDSigmasCalibrate(io.ComfyNode):
 
     @classmethod
     def execute(cls, model, positive, negative, latent_image, seed: int, cfg: float,
-                scheduler: str, calib_steps: int, vae=None) -> io.NodeOutput:
+                scheduler: str, calib_steps: int, vae=None, model_low=None,
+                boundary: float = 0.875) -> io.NodeOutput:
         ref_sigmas = comfy.samplers.calculate_sigmas(
             model.get_model_object("model_sampling"), scheduler, calib_steps).cpu()
 
@@ -149,10 +159,25 @@ class NKDSigmasCalibrate(io.ComfyNode):
             prev[:] = [cur]
             preview(step, x0, x, total_steps)
 
-        samples = comfy.sample.sample_custom(
-            model, noise, cfg, comfy.samplers.sampler_object("euler"), ref_sigmas,
-            positive, negative, latent, noise_mask=latent_image.get("noise_mask"),
-            callback=callback, disable_pbar=True, seed=seed)
+        # Two experts: run the schedule in two chained segments, like SplitSigmas
+        # into two custom samplers, the second with no added noise.
+        # Each expert keeps at least one step.
+        segments = [(model, ref_sigmas, noise)]
+        if model_low is not None:
+            split = min(max(int((ref_sigmas >= boundary).sum()), 1), len(ref_sigmas) - 2)
+            segments = [(model, ref_sigmas[: split + 1], noise), (model_low, ref_sigmas[split:], None)]
+
+        samples, offset = latent, 0
+        for seg_model, seg_sigmas, seg_noise in segments:
+            if seg_noise is None:
+                seg_noise = comfy.sample.prepare_empty_noise(samples)
+            step0 = offset
+            samples = comfy.sample.sample_custom(
+                seg_model, seg_noise, cfg, comfy.samplers.sampler_object("euler"), seg_sigmas,
+                positive, negative, samples, noise_mask=latent_image.get("noise_mask"),
+                callback=lambda step, x0, x, total, o=step0: callback(step + o, x0, x, len(ref_sigmas) - 1),
+                disable_pbar=True, seed=seed)
+            offset += len(seg_sigmas) - 1
 
         # Same shape KSampler hands out, so the reference can be decoded or
         # compared like any other sampler result.
@@ -177,7 +202,10 @@ class NKDSigmasCalibrate(io.ComfyNode):
 
         logging.info("[NKD Sigmas Calibrate] %s x%d: x0 change per step %s",
                      scheduler, calib_steps, ", ".join(f"{v:.4f}" for v in d.tolist()))
-        return io.NodeOutput({"sigmas": ref_sigmas, "deltas": d, "scheduler": scheduler},
+        profile = {"sigmas": ref_sigmas, "deltas": d, "scheduler": scheduler}
+        if model_low is not None:
+            profile["boundary"] = boundary
+        return io.NodeOutput(profile,
                              out_latent, image)
 
 
@@ -204,6 +232,8 @@ class NKDSigmasEqualize(io.ComfyNode):
             outputs=[
                 io.Sigmas.Output(),
                 io.Float.Output(display_name="floats"),
+                io.Int.Output(display_name="split_step",
+                              tooltip="Two-expert profiles: first step for model_low (feed SplitSigmas). 0 otherwise"),
             ],
         )
 
@@ -221,4 +251,5 @@ class NKDSigmasEqualize(io.ComfyNode):
         logging.info("[NKD Sigmas Equalize] sigmas: %s",
                      ", ".join(f"{s:.4f}" for s in sigmas.tolist()))
 
-        return io.NodeOutput(sigmas, sigmas.tolist())
+        split_step = int((sigmas[:-1] >= profile["boundary"]).sum()) if "boundary" in profile else 0
+        return io.NodeOutput(sigmas, sigmas.tolist(), split_step)

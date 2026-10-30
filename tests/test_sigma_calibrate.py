@@ -109,7 +109,51 @@ def demo():
         assert img.ndim == 4 and img.shape[-1] == 3
         assert img.shape[0] == (2 if vae else 1)
 
+    # Video: 5D latent [B, C, T, H, W] goes through unchanged.
+    vid = {"samples": torch.zeros(1, 16, 5, 8, 8)}
+    prof, out_lat, img = m.NKDSigmasCalibrate.execute(FakeModel(), None, None, vid, 0, 3.0, "simple", 5, FakeVAE()).result
+    assert prof["deltas"].tolist() == [1.0, 3.0, 5.0, 7.0, 7.0]
+    assert out_lat["samples"].shape == (1, 16, 5, 8, 8) and img.ndim == 4
+
+    # Two experts (Wan 2.2): high model above boundary, low model below, the
+    # second segment starts from the first one's result with no fresh noise.
+    seen = []
+
+    def fake_sample2(model, noise, cfg, sampler, sigmas, pos, neg, latent, noise_mask=None,
+                     callback=None, disable_pbar=False, seed=None):
+        seen.append((model, sigmas.tolist(), bool(noise.abs().sum() == 0), float(latent.flatten()[0])))
+        n = len(sigmas) - 1
+        base = 0 if model == "high" else 3  # global step index of this segment's first step
+        for i in range(n):
+            callback(i, torch.full_like(latent, float((base + i) ** 2)), latent, n)
+        return torch.full_like(latent, 7.0 if model == "high" else 9.0)
+
+    m.comfy.sample.sample_custom = fake_sample2
+    m.comfy.sample.prepare_empty_noise = torch.zeros_like
+    FakeModel.__eq__ = lambda self, o: o == "high"
+    res = m.NKDSigmasCalibrate.execute(FakeModel(), None, None, lat, 0, 3.0, "simple", 5, None,
+                                       model_low="low", boundary=0.5).result
+    prof, out_lat, _ = res
+    # sigmas 1, .8, .6, .4, .2, 0 -> 3 above 0.5: high runs 1..0.4, low 0.4..0
+    assert seen[0][1] == _Approx([1.0, 0.8, 0.6, 0.4]) and not seen[0][2]
+    assert seen[1][0] == "low" and seen[1][1] == _Approx([0.4, 0.2, 0.0])
+    assert seen[1][2] and seen[1][3] == 7.0, seen[1]
+    assert prof["deltas"].tolist() == [1.0, 3.0, 5.0, 7.0, 7.0], prof["deltas"]
+    assert prof["boundary"] == 0.5
+    assert torch.equal(out_lat["samples"], torch.full((2, 4, 8, 8), 9.0))
+
+    # Equalize hands back where to split for the two samplers (SplitSigmas step).
+    out = m.NKDSigmasEqualize.execute(prof, 10, 0.0).result
+    k = out[2]
+    assert out[0][k - 1] >= 0.5 > out[0][k], (k, out[0])
+    assert m.NKDSigmasEqualize.execute({"sigmas": ref, "deltas": d}, 10, 0.0).result[2] == 0
+
     print("sigma calibrate OK")
+
+
+class _Approx(list):
+    def __eq__(self, other):
+        return len(self) == len(other) and all(abs(a - b) < 1e-6 for a, b in zip(self, other))
 
 
 if __name__ == "__main__":

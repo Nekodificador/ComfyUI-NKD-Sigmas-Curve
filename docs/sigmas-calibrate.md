@@ -51,6 +51,17 @@ Calibrate with the same model patches (shift, LoRAs), CFG and resolution you wil
 with, because the profile depends on all of them. A latent batch larger than 1 averages
 the profile over several seeds, which is better than trusting a single one.
 
+### Video
+
+Video and audio+video latents work as they are (with audio+video, the video part is
+what gets measured). Calibrating a long clip is slow, but it only runs once.
+
+Models with two experts, like Wan 2.2, need both: connect the low-noise model to
+`model_low` and set `boundary` to the sigma where it takes over (0.875 for T2V, 0.9 for
+I2V). Equalize then gives you `split_step`; feed it to **SplitSigmas** and run the high
+half with the first model and the low half with `model_low`. Single models such as
+MiniMax H3 leave `model_low` empty.
+
 To see the result or keep editing it, wire the output into **Sigmas Curve**'s
 `reference_sigmas` and press **Match**.
 
